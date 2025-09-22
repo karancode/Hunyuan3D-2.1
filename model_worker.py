@@ -162,7 +162,8 @@ class ModelWorker:
         # Export initial mesh without texture
         
         initial_save_path = os.path.join(self.save_dir, f'{str(uid)}_initial.glb')
-
+        mesh.export(initial_save_path)
+        
         if self.low_vram_mode:
             torch.cuda.empty_cache()
             
