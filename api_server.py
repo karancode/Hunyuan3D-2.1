@@ -32,6 +32,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 
+import trimesh
+
 # Import from root-level modules
 from api_models import GenerationRequest, GenerationResponse, StatusResponse, HealthResponse
 from logger_utils import build_logger
@@ -87,9 +89,15 @@ async def generate_3d_model(request: GenerationRequest):
     params = request.dict()
     
     uid = uuid.uuid4()
+    
     try:
         file_path, uid = worker.generate(uid, params)
+        mesh = trimesh.load(file_path)
+        stl_path = file_path.replace('.glb', '.stl')
+        mesh.export(stl_path)
+        file_path = stl_path
         return FileResponse(file_path)
+    
     except ValueError as e:
         traceback.print_exc()
         logger.error(f"Caught ValueError: {e}")
@@ -114,34 +122,6 @@ async def generate_3d_model(request: GenerationRequest):
         }
         return JSONResponse(ret, status_code=404)
 
-
-@app.post("/send", response_model=GenerationResponse, tags=["generation"])
-async def send_generation_task(request: GenerationRequest):
-    """
-    Send a 3D generation task to be processed asynchronously.
-    
-    This endpoint starts the generation process in the background and returns a task ID.
-    Use the /status/{uid} endpoint to check the progress and retrieve the result.
-    
-    Returns:
-        GenerationResponse: Contains the unique task identifier
-    """
-    logger.info("Worker send...")
-    
-    # Convert Pydantic model to dict for compatibility
-    params = request.dict()
-    
-    uid = uuid.uuid4()
-    try:
-        threading.Thread(target=worker.generate, args=(uid, params,)).start()
-        ret = {"uid": str(uid)}
-        return JSONResponse(ret, status_code=200)
-    except Exception as e:
-        logger.error(f"Failed to start generation thread: {e}")
-        ret = {"error": "Failed to start generation"}
-        return JSONResponse(ret, status_code=500)
-
-
 @app.get("/health", response_model=HealthResponse, tags=["status"])
 async def health_check():
     """
@@ -151,45 +131,6 @@ async def health_check():
         HealthResponse: Service health status and worker identifier
     """
     return JSONResponse({"status": "healthy", "worker_id": worker_id}, status_code=200)
-
-
-@app.get("/status/{uid}", response_model=StatusResponse, tags=["status"])
-async def status(uid: str):
-    """
-    Check the status of a generation task.
-    
-    Args:
-        uid: The unique identifier of the generation task
-        
-    Returns:
-        StatusResponse: Current status of the task and result if completed
-    """
-    # Check for textured file first (preferred output)
-    textured_file_path = os.path.join(SAVE_DIR, f'{uid}_textured.glb')
-    initial_file_path = os.path.join(SAVE_DIR, f'{uid}_initial.glb')
-    
-    #print(f"Checking files: {textured_file_path} ({os.path.exists(textured_file_path)}), {initial_file_path} ({os.path.exists(initial_file_path)})")
-    
-    # If textured file exists, generation is complete
-    if os.path.exists(textured_file_path):
-        try:
-            base64_str = base64.b64encode(open(textured_file_path, 'rb').read()).decode()
-            response = {'status': 'completed', 'model_base64': base64_str}
-            return JSONResponse(response, status_code=200)
-        except Exception as e:
-            logger.error(f"Error reading file {textured_file_path}: {e}")
-            response = {'status': 'error', 'message': 'Failed to read generated file'}
-            return JSONResponse(response, status_code=500)
-    
-    # If only initial file exists, texturing is in progress
-    elif os.path.exists(initial_file_path):
-        response = {'status': 'texturing'}
-        return JSONResponse(response, status_code=200)
-    
-    # If no files exist, still processing
-    else:
-        response = {'status': 'processing'}
-        return JSONResponse(response, status_code=200)
 
 
 if __name__ == "__main__":

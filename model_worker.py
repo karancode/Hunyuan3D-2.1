@@ -29,16 +29,6 @@ from hy3dshape.utils import logger
 from textureGenPipeline import Hunyuan3DPaintPipeline, Hunyuan3DPaintConfig
 from hy3dpaint.convert_utils import create_glb_with_pbr_materials
 
-
-def quick_convert_with_obj2gltf(obj_path: str, glb_path: str):
-    textures = {
-        'albedo': obj_path.replace('.obj', '.jpg'),
-        'metallic': obj_path.replace('.obj', '_metallic.jpg'),
-        'roughness': obj_path.replace('.obj', '_roughness.jpg')
-        }
-    create_glb_with_pbr_materials(obj_path, textures, glb_path)
-
-
 def load_image_from_base64(image):
     """
     Load an image from base64 encoded string.
@@ -93,7 +83,7 @@ class ModelWorker:
         logger.info(f"Loading the model {model_path} on worker {self.worker_id} ...")
 
         # Initialize background remover
-        self.rembg = BackgroundRemover()
+        # self.rembg = BackgroundRemover()
         
         # Initialize shape generation pipeline (matching demo.py)
         self.pipeline = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(model_path)
@@ -161,11 +151,6 @@ class ModelWorker:
         else:
             raise ValueError("No input image provided")
 
-        # Convert to RGBA and remove background if needed
-        image = image.convert("RGBA")
-        if image.mode == "RGB":
-            image = self.rembg(image)
-
         # Generate mesh 
         try:
             mesh = self.pipeline(image=image)[0]
@@ -177,42 +162,13 @@ class ModelWorker:
         # Export initial mesh without texture
         
         initial_save_path = os.path.join(self.save_dir, f'{str(uid)}_initial.glb')
-        mesh.export(initial_save_path)
-        
-        # Generate textured mesh as obj ( as in demo )
-        try:
-            output_mesh_path_obj = os.path.join(self.save_dir, f'{str(uid)}_texturing.obj')
-            textured_path_obj = self.paint_pipeline(
-                mesh_path=initial_save_path,
-                image_path=image,
-                output_mesh_path=output_mesh_path_obj,
-                save_glb=False            
-            )
-            logger.info("---Texture generation takes %s seconds ---" % (time.time() - start_time))
-            logger.info(f"output_mesh_path: {output_mesh_path_obj} textured_path: {textured_path_obj}")
-            # Use the textured GLB as the final output
-            #final_save_path = os.path.join(self.save_dir, f'{str(uid)}_textured.{file_type}')
-            #os.rename(output_mesh_path, final_save_path)
-
-            # Convert textured OBJ to GLB using obj2gltf with PBR support
-            print("convert textured OBJ to GLB")
-            glb_path_textured = os.path.join(self.save_dir, f'{str(uid)}_texturing.glb')
-            quick_convert_with_obj2gltf(textured_path_obj, glb_path_textured)
-            # now rename glb_path to uid_textured.glb
-            print("done.")
-            final_save_path = os.path.join(self.save_dir, f'{str(uid)}_textured.glb')
-            os.rename(glb_path_textured, final_save_path)
-            print(f"final_save_path: {final_save_path}")
 
             
         except Exception as e:
             logger.error(f"Texture generation failed: {e}")
-            # Fall back to untextured mesh if texture generation fails
-            final_save_path = initial_save_path
-            logger.warning(f"Using untextured mesh as fallback: {final_save_path}")
 
         if self.low_vram_mode:
             torch.cuda.empty_cache()
             
         logger.info("---Total generation takes %s seconds ---" % (time.time() - start_time))
-        return final_save_path, uid 
+        return initial_save_path, uid 
