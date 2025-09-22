@@ -163,10 +163,6 @@ class ModelWorker:
         
         initial_save_path = os.path.join(self.save_dir, f'{str(uid)}_initial.glb')
 
-            
-        except Exception as e:
-            logger.error(f"Texture generation failed: {e}")
-
         if self.low_vram_mode:
             torch.cuda.empty_cache()
             
