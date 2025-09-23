@@ -112,4 +112,4 @@ RUN rm -f /workspace/*.zip && \
 # Set default command
 WORKDIR /workspace/Hunyuan3D-2.1
 RUN mkdir gradio_cache
-CMD ["python", "api_server.py"]
+CMD ["python", "api_server.py", "--enable_flashvdm"]
