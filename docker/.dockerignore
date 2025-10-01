@@ -1,0 +1,88 @@
+# Git and version control
+.git
+.gitignore
+.gitmodules
+
+# Python cache and virtual environments
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env
+pip-log.txt
+pip-delete-this-directory.txt
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker files (avoid recursive copying)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Jupyter notebooks
+.ipynb_checkpoints
+
+# Model weights and large files (download during build instead)
+*.pth
+*.ckpt
+*.safetensors
+models/
+checkpoints/
+
+# Output directories
+outputs/
+results/
+logs/
+
+# Documentation
+*.md
+docs/
+
+# Test files
+test_*
+tests/
+
+# Configuration files that might contain secrets
+*.env
+.env.*
