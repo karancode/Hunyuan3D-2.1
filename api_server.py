@@ -180,7 +180,7 @@ async def health_check():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hunyuan3D API Server")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host address")
-    parser.add_argument("--port", type=int, default=7860, help="Port number")
+    parser.add_argument("--port", type=int, default=8081, help="Port number")
     parser.add_argument("--model_path", type=str, default='tencent/Hunyuan3D-2.1', help="Model path")
     parser.add_argument("--subfolder", type=str, default='hunyuan3d-dit-v2-1', help="Model subfolder")
     parser.add_argument("--device", type=str, default="cuda", help="Device (cuda/cpu)")
