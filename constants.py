@@ -15,28 +15,26 @@ API_TITLE = "Hunyuan3D API Server"
 API_DESCRIPTION = """
 # Hunyuan3D 2.1 API Server
 
-This API server provides endpoints for generating 3D models from 2D images using the Hunyuan3D model.
+This API server provides a clean, simple endpoint for generating 3D models from 2D images using the Hunyuan3D model.
 
 ## Features
 
 - **3D Shape Generation**: Convert 2D images to 3D meshes
-- **Texture Generation**: Generate PBR textures for 3D models
+- **Mesh Processing**: Automatic floater removal, degenerate face removal, and face reduction
+- **STL Export**: Direct STL output optimized for 3D printing
 - **Background Removal**: Automatic background removal from input images
-- **Multiple Formats**: Support for GLB and OBJ output formats
-- **Async Processing**: Background task processing with status tracking
+- **Clean Architecture**: Simple, focused API for production use
 
 ## Usage
 
-1. Use `/generate` for immediate 3D model generation from images
-2. Use `/send` for asynchronous processing with status tracking
-3. Use `/status/{uid}` to check task progress and retrieve results
-4. Use `/health` to verify service status
+1. Use `/generate` for direct 3D model generation from images → STL file
+2. Use `/health` to verify service status
 
 ## Model Information
 
 - **Model**: Hunyuan3D-2.1 by Tencent
 - **License**: TENCENT HUNYUAN NON-COMMERCIAL LICENSE AGREEMENT
-- **Capabilities**: Image-to-3D, Texture Generation
+- **Output**: STL files ready for 3D printing
 """
 API_VERSION = "2.1.0"
 API_CONTACT = {
@@ -52,10 +50,10 @@ API_LICENSE_INFO = {
 API_TAGS_METADATA = [
     {
         "name": "generation",
-        "description": "3D model generation endpoints. Generate 3D models from 2D images with optional textures.",
+        "description": "3D model generation endpoint. Generate processed 3D models from 2D images as STL files.",
     },
     {
         "name": "status",
-        "description": "Task status and health check endpoints. Monitor generation progress and service health.",
+        "description": "Health check endpoint. Verify service status and availability.",
     },
 ] 

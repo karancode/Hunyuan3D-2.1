@@ -87,9 +87,11 @@ class ModelWorker:
         
         # Initialize shape generation pipeline (matching demo.py)
         self.pipeline = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained(model_path)
+        
         if self.enable_flashvdm:
             mc_algo = 'mc' if self.device in ['cpu', 'mps'] else self.mc_algo
             self.pipeline.enable_flashvdm(mc_algo=mc_algo)
+        
         if self.compile:
             self.pipeline.compile()
             
@@ -101,6 +103,7 @@ class ModelWorker:
         conf.multiview_cfg_path = "hy3dpaint/cfgs/hunyuan-paint-pbr.yaml"
         conf.custom_pipeline = "hy3dpaint/hunyuanpaintpbr"
         self.paint_pipeline = Hunyuan3DPaintPipeline(conf)
+        
         # clean cache in save_dir
         for file in os.listdir(self.save_dir):
             os.remove(os.path.join(self.save_dir, file))
@@ -144,6 +147,7 @@ class ModelWorker:
         """
         start_time = time.time()
         logger.info(f"Generating 3D model for uid: {uid}")
+        
         # Handle input image
         if 'image' in params:
             image = params["image"]

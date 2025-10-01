@@ -1,7 +1,7 @@
 """
 Pydantic models for Hunyuan3D API server.
 """
-from typing import Optional, Literal
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
@@ -52,27 +52,13 @@ class GenerationRequest(BaseModel):
     )
     face_count: int = Field(
         40000,
-        description="Maximum number of faces for texture generation",
+        description="Maximum number of faces for mesh processing",
         ge=1000,
         le=100000
     )
-
-
-class GenerationResponse(BaseModel):
-    """Response model for generation status"""
-    uid: str = Field(..., description="Unique identifier for the generation task")
-
-
-class StatusResponse(BaseModel):
-    """Response model for status endpoint"""
-    status: str = Field(..., description="Status of the generation task")
-    model_base64: Optional[str] = Field(
-        None, 
-        description="Base64 encoded generated model file (only when status is 'completed')"
-    )
-    message: Optional[str] = Field(
-        None,
-        description="Error message (only when status is 'error')"
+    type: Literal["glb", "stl"] = Field(
+        "stl",
+        description="Output file format (GLB or STL)"
     )
 
 
