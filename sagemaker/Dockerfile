@@ -1,7 +1,7 @@
 # get the development image from nvidia cuda 12.4 (using devel for full CUDA toolkit)
 FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 
-LABEL name="hunyuan3d21" maintainer="hunyuan3d21"
+LABEL name="hunyuan3d21" maintainer="karancode"
 
 # create workspace folder and set it as working directory
 RUN mkdir -p /workspace
