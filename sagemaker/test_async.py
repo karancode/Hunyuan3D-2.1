@@ -101,14 +101,76 @@ def test_async(endpoint_name, image_path):
         print(f"   Faces: {result_data.get('faces', 'N/A')}")
         print(f"   Vertices: {result_data.get('vertices', 'N/A')}")
         
-        # Save model
-        if 'model_data' in result_data:
+        # Get output folder path
+        output_folder = '/'.join(key.split('/')[:-1])
+        
+        # Download both GLB and STL files
+        if 'glb_filename' in result_data and 'stl_filename' in result_data:
+            glb_filename = result_data['glb_filename']
+            stl_filename = result_data['stl_filename']
+            
+            print(f"\n7. Downloading model files from S3...")
+            
+            # Download GLB (original)
+            glb_key = f"{output_folder}/{glb_filename}"
+            print(f"   Downloading GLB: s3://{bucket}/{glb_key}")
+            try:
+                glb_obj = s3.get_object(Bucket=bucket, Key=glb_key)
+                glb_bytes = glb_obj['Body'].read()
+                
+                output_glb = 'output_async.glb'
+                with open(output_glb, 'wb') as f:
+                    f.write(glb_bytes)
+                print(f"   ✓ Saved GLB: {output_glb} ({len(glb_bytes):,} bytes)")
+            except Exception as e:
+                print(f"   ⚠️  Could not download GLB: {e}")
+            
+            # Download STL (processed)
+            stl_key = f"{output_folder}/{stl_filename}"
+            print(f"   Downloading STL: s3://{bucket}/{stl_key}")
+            try:
+                stl_obj = s3.get_object(Bucket=bucket, Key=stl_key)
+                stl_bytes = stl_obj['Body'].read()
+                
+                output_stl = 'output_async.stl'
+                with open(output_stl, 'wb') as f:
+                    f.write(stl_bytes)
+                print(f"   ✓ Saved STL: {output_stl} ({len(stl_bytes):,} bytes)")
+            except Exception as e:
+                print(f"   ⚠️  Could not download STL: {e}")
+            
+            print(f"\n   Files saved:")
+            print(f"   • {output_glb} - Original high-quality mesh")
+            print(f"   • {output_stl} - Processed mesh for 3D printing")
+        
+        # Fallback for old response format
+        elif 'output_filename' in result_data:
+            stl_filename = result_data['output_filename']
+            stl_key = f"{output_folder}/{stl_filename}"
+            
+            print(f"\n7. Downloading model file from S3...")
+            print(f"   S3 location: s3://{bucket}/{stl_key}")
+            
+            try:
+                stl_obj = s3.get_object(Bucket=bucket, Key=stl_key)
+                model_bytes = stl_obj['Body'].read()
+                
+                output_file = 'output_async.stl'
+                with open(output_file, 'wb') as f:
+                    f.write(model_bytes)
+                print(f"   ✓ Saved to: {output_file}")
+                print(f"   File size: {len(model_bytes):,} bytes")
+            except Exception as e:
+                print(f"   ⚠️  Could not download file: {e}")
+        
+        # Fallback for base64 encoded (old method)
+        elif 'model_data' in result_data:
             output_file = 'output_async.stl'
             model_bytes = base64.b64decode(result_data['model_data'])
             with open(output_file, 'wb') as f:
                 f.write(model_bytes)
             print(f"\n   Saved to: {output_file}")
-            print(f"   File size: {len(model_bytes)} bytes")
+            print(f"   File size: {len(model_bytes):,} bytes")
         
         return True
     else:
