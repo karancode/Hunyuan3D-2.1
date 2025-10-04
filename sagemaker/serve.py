@@ -270,67 +270,39 @@ async def invocations(request: Request):
         mesh = trimesh.load(file_path)
         processed_mesh = process_mesh(mesh, max_faces=face_count)
         
-        # Check if this is async inference
-        output_data_dir = os.environ.get('SM_OUTPUT_DATA_DIR')
-        is_async = output_data_dir is not None
+        # For async inference: Save files to /opt/ml/output/data
+        # SageMaker automatically uploads all files from this directory to S3
+        output_dir = "/opt/ml/output/data"
+        os.makedirs(output_dir, exist_ok=True)
         
-        if is_async:
-            # Async inference: Save both GLB and processed mesh to output directory
-            logger.info("Async inference mode - saving to SM_OUTPUT_DATA_DIR")
-            import shutil
-            
-            # 1. Copy original GLB
-            glb_filename = f"{uid}.glb"
-            glb_path = os.path.join(output_data_dir, glb_filename)
-            shutil.copy(file_path, glb_path)
-            logger.info(f"Saved original GLB: {glb_path}")
-            
-            # 2. Export processed mesh
-            processed_filename = f"{uid}.{output_format}"
-            processed_path = os.path.join(output_data_dir, processed_filename)
-            processed_mesh.export(processed_path)
-            logger.info(f"Saved processed {output_format}: {processed_path}")
-            
-            # 3. Return metadata
-            response = {
-                'success': True,
-                'format': output_format,
-                'faces': int(processed_mesh.faces.shape[0]),
-                'vertices': int(processed_mesh.vertices.shape[0]),
-                'worker_id': worker_id,
-                'glb_filename': glb_filename,
-                'stl_filename': processed_filename,
-                'message': f'Models saved: {glb_filename} (original) and {processed_filename} (processed)'
-            }
-            
-        else:
-            # Real-time inference: Return base64 encoded data
-            logger.info("Real-time inference mode - returning base64 data")
-            
-            # Export to temp location
-            temp_output = file_path.replace('.glb', f'_processed.{output_format}')
-            processed_mesh.export(temp_output)
-            logger.info(f"Exported to temp: {temp_output}")
-            
-            # Read and encode
-            with open(temp_output, 'rb') as f:
-                model_data = base64.b64encode(f.read()).decode('utf-8')
-            
-            # Clean up temp file immediately
-            try:
-                os.remove(temp_output)
-                logger.info(f"Cleaned up temp file: {temp_output}")
-            except Exception as e:
-                logger.warning(f"Failed to clean temp file: {e}")
-            
-            response = {
-                'success': True,
-                'model_data': model_data,
-                'format': output_format,
-                'faces': int(processed_mesh.faces.shape[0]),
-                'vertices': int(processed_mesh.vertices.shape[0]),
-                'worker_id': worker_id
-            }
+        logger.info(f"Saving models to: {output_dir}")
+        
+        # 1. Copy original GLB to output directory
+        import shutil
+        glb_filename = f"{uid}.glb"
+        glb_path = os.path.join(output_dir, glb_filename)
+        shutil.copy(file_path, glb_path)
+        logger.info(f"Saved original GLB: {glb_path}")
+        
+        # 2. Export processed mesh to output directory
+        stl_filename = f"{uid}.{output_format}"
+        stl_path = os.path.join(output_dir, stl_filename)
+        processed_mesh.export(stl_path)
+        logger.info(f"Saved processed {output_format}: {stl_path}")
+        
+        # 3. Return metadata
+        # This JSON goes to S3 as <request-id>.out
+        # The GLB and STL files also get uploaded to the same S3 folder
+        response = {
+            'success': True,
+            'format': output_format,
+            'faces': int(processed_mesh.faces.shape[0]),
+            'vertices': int(processed_mesh.vertices.shape[0]),
+            'worker_id': worker_id,
+            'glb_filename': glb_filename,
+            'stl_filename': stl_filename,
+            'message': f'Models saved: {glb_filename} (original) and {stl_filename} (processed)'
+        }
         
         logger.info(f"Successfully generated model: {processed_mesh.faces.shape[0]} faces, {processed_mesh.vertices.shape[0]} vertices")
         
