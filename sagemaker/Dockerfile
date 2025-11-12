@@ -109,6 +109,7 @@ RUN mkdir -p /opt/program
 RUN mkdir -p gradio_cache
 
 # Copy serving script (you'll create this)
+RUN pip install boto3==1.40.45
 COPY serve.py /opt/program/serve.py
 RUN chmod +x /opt/program/serve.py
 
